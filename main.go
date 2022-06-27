@@ -5,7 +5,10 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/rhadamez/simulator-aluno/application/route"
+	kafkaProduce "github.com/rhadamez/simulator-aluno/application/kafka"
+	affe "github.com/rhadamez/simulator-aluno/infra/kafka"
+
+	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func init() {
@@ -16,15 +19,12 @@ func init() {
 }
 
 func main() {
-	route := route.Route{
-		ID:       "1",
-		ClientId: "1",
+	msgChan := make(chan *ckafka.Message)
+	consumer := affe.NewKafkaConsumer(msgChan)
+	go consumer.Consume()
+
+	for msg := range msgChan {
+		fmt.Println(string(msg.Value))
+		go kafkaProduce.Produce(msg)
 	}
-	route.LoadPositions()
-	stringjson, _ := route.ExportJsonPositions()
-	fmt.Println(stringjson[0])
-	fmt.Println(stringjson[1])
-	fmt.Println(stringjson[2])
-	fmt.Println(stringjson[3])
-	fmt.Println(stringjson[4])
 }
